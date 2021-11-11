@@ -15,6 +15,7 @@ class queryResolver{
         return await ctx.prisma.link.findMany()
         // return links;
     }
+    
 }
 
 export {queryResolver};

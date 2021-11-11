@@ -8,13 +8,16 @@ import {PrismaClient} from '@prisma/client'
 import { Link } from './grpahql-schema-classes';
 import { queryResolver } from './resolvers/query';
 import { mutationResolver } from './resolvers/mutation';
+import { getUserId } from './utility';
+import { LinkResolver, UserResolver } from './resolvers/fieldResolvers';
 
 interface Context {
-    prisma : PrismaClient
+    prisma : PrismaClient,
+    userId : number | null | undefined
 }
 
 buildSchema({
-    resolvers : [queryResolver, mutationResolver],
+    resolvers : [queryResolver, mutationResolver, UserResolver, LinkResolver],
     
 })
 .then(schema =>{
@@ -22,7 +25,12 @@ buildSchema({
     const server = new ApolloServer({
         schema : schema,
         plugins: [ApolloServerPluginLandingPageGraphQLPlayground()],
-        context : () : Context =>({prisma})
+        context : ({req}) : Context =>{
+            return({
+                prisma : prisma,
+                userId : req && req.headers.authorization ? getUserId(req) : null
+            })
+        }
     })
     server.listen().then(({url})=>{
         console.log(url);

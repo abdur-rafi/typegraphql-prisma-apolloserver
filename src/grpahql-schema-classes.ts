@@ -3,7 +3,7 @@ import { Field, ID, ObjectType } from "type-graphql";
 @ObjectType()
 class User{
     @Field()
-    id : string;
+    id : number;
 
     @Field()
     name : string;
@@ -12,7 +12,9 @@ class User{
     email : string;
     
     @Field(type => [Link])
-    links : Link[]
+    links : Link[] 
+
+    
 }
 
 
@@ -30,9 +32,11 @@ class Link{
     @Field(type => User)
     postedBy : User
 
+    postedById : number;
+
 }
 
-
+@ObjectType()
 class AuthPayLoad{
     @Field()
     token : string;

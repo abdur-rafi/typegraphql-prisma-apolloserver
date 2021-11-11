@@ -14,10 +14,14 @@ class mutationResolver{
     
     @Mutation(returns => Link)
     postLink(@Arg("url") url : string, @Arg("description") description : string, @Ctx() ctx : Context){
+        if(!ctx.userId){
+            throw new Error("unauthorized");
+        }
         return ctx.prisma.link.create({
             data : {
                 description : description,
-                url : url
+                url : url,
+                postedById : ctx.userId
             }
         })
     }
@@ -28,20 +32,27 @@ class mutationResolver{
     }) description? : string, @Arg('url', {
         nullable : true
     }) url? : string){
+
         let data : {
             description? : string,
             url? : string
         } = {}
         if(description) data.description = description;
         if(url) data.url = url; 
-        let u = await ctx.prisma.link.update({
+        if(!ctx.userId){
+            throw new Error("Unauthorized");
+        }
+        
+        let u = await ctx.prisma.link.updateMany({
             where : {
-                id : id
+                id : id,
+                postedById : ctx.userId
             },
             data : {
                 ...data
             }
         })
+        
         return u;
     }
     @Mutation(returns => Link , {nullable : true})
@@ -50,9 +61,13 @@ class mutationResolver{
             description? : string,
             url? : string
         } = {}
-        return await ctx.prisma.link.delete({
+        if(!ctx.userId){
+            throw new Error("unauthorized");
+        }
+        return await ctx.prisma.link.deleteMany({
             where : {
-                id : id
+                id : id,
+                postedById : ctx.userId
             } 
         })
     }

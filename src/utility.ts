@@ -14,18 +14,20 @@ function getTokenPayLoad(token : string){
     return t;
 }
 
-function getUserId(req : Request, authToken : string){
+function getUserId(req : Request){
     
     const authHeader = req.headers.authorization;
     if(authHeader){
         const token = authHeader.replace('Bearer ', '');
+        if(!token) return null;
         const t = getTokenPayLoad(token);
         if(!t){
             throw new Error('Unauthorized');
         }
         return t.userId;
     }
-    throw new Error('Unauthorized');
+    else return null;
+    // throw new Error('Unauthorized');
 }
 
 
