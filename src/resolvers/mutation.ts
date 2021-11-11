@@ -1,4 +1,4 @@
-import { Arg, Ctx, Mutation, Resolver } from "type-graphql";
+import { Arg, Authorized, Ctx, Mutation, Resolver } from "type-graphql";
 import { Context } from "..";
 import { AuthPayLoad, Link, User } from "../grpahql-schema-classes";
 import bcrpypt from 'bcryptjs'
@@ -12,11 +12,9 @@ interface jwtPayLoad{
 @Resolver()
 class mutationResolver{
     
+    @Authorized()
     @Mutation(returns => Link)
     postLink(@Arg("url") url : string, @Arg("description") description : string, @Ctx() ctx : Context){
-        if(!ctx.userId){
-            throw new Error("unauthorized");
-        }
         return ctx.prisma.link.create({
             data : {
                 description : description,
@@ -26,6 +24,7 @@ class mutationResolver{
         })
     }
 
+    @Authorized()
     @Mutation(returns => Link , {nullable : true})
     async updateLink(@Ctx() ctx : Context, @Arg('id') id : number, @Arg('description', {
         nullable : true
@@ -38,39 +37,58 @@ class mutationResolver{
             url? : string
         } = {}
         if(description) data.description = description;
-        if(url) data.url = url; 
-        if(!ctx.userId){
-            throw new Error("Unauthorized");
-        }
-        
-        let u = await ctx.prisma.link.updateMany({
+        if(url) data.url = url;
+
+        let link = await ctx.prisma.link.findUnique({
             where : {
-                id : id,
-                postedById : ctx.userId
+                id : id
+            }
+        })
+        
+        if(!link){
+            throw new Error("Link does not exist")
+        }
+        if(link.postedById !== ctx.userId){
+            throw new Error("Unauthorized")
+        }
+        let updatedLink = await ctx.prisma.link.update({
+            where : {
+                id : link.id
             },
-            data : {
+            data:{
                 ...data
             }
         })
         
-        return u;
+        return updatedLink;
     }
+
+    @Authorized()
     @Mutation(returns => Link , {nullable : true})
     async deleteLink(@Ctx() ctx : Context, @Arg('id') id : number){
         let data : {
             description? : string,
             url? : string
         } = {}
-        if(!ctx.userId){
-            throw new Error("unauthorized");
-        }
-        return await ctx.prisma.link.deleteMany({
-            where : {
-                id : id,
-                postedById : ctx.userId
-            } 
+        let link = await ctx.prisma.link.findUnique({
+            where : {id : id}
         })
+        if(!link){
+            throw new Error("Link does not exist")
+        }
+        if(link.postedById !== ctx.userId){
+            throw new Error("Unauthorized")
+        }
+        await ctx.prisma.link.delete({
+            where : {
+                id : link.id
+            }
+        })
+        return link;
+
     }
+
+    @Authorized()
     @Mutation(returns => AuthPayLoad)
     async signup(@Arg("name") name : string, @Arg("email") email : string, @Arg("password") pass : string, @Ctx() ctx : Context){
         let hashed = await bcrpypt.hash(pass, 10);
@@ -93,7 +111,7 @@ class mutationResolver{
         })
     }
 
-
+    @Authorized()
     @Mutation(returns => AuthPayLoad)
     async login(@Arg('email') email : string, @Arg('pass') pass : string, @Ctx() ctx : Context){
         let user = await ctx.prisma.user.findUnique({

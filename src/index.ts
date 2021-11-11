@@ -10,6 +10,7 @@ import { queryResolver } from './resolvers/query';
 import { mutationResolver } from './resolvers/mutation';
 import { getUserId } from './utility';
 import { LinkResolver, UserResolver } from './resolvers/fieldResolvers';
+import { authChecker } from './authChecker';
 
 interface Context {
     prisma : PrismaClient,
@@ -18,6 +19,7 @@ interface Context {
 
 buildSchema({
     resolvers : [queryResolver, mutationResolver, UserResolver, LinkResolver],
+    authChecker : authChecker
     
 })
 .then(schema =>{

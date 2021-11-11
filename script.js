@@ -16,12 +16,6 @@ const prisma = new PrismaClient();
 
 // 3
 async function main() {
-    const newLink = await prisma.link.create({
-        data : {
-            description : 'Fullstack tutorial for graphql',
-            url : 'www.howtographql.com'
-        }
-    })
     // const allLinks = await prisma.link.findMany();
     // console.log(allLinks);
     // console.log(await prisma.link.update({
@@ -32,6 +26,12 @@ async function main() {
     //         description : 'asldkjflsdf'
     //     }
     // }))
+    console.log(await prisma.link.deleteMany({
+        where : {
+            id : 21,
+            postedById : 1
+        } 
+    }))
 }
 
 
