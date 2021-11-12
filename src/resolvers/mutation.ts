@@ -1,9 +1,10 @@
-import { Arg, Authorized, Ctx, Mutation, Resolver } from "type-graphql";
+import { Arg, Authorized, Ctx, Mutation, PubSub, Resolver } from "type-graphql";
 import { Context } from "..";
 import { AuthPayLoad, Link, User } from "../grpahql-schema-classes";
 import bcrpypt from 'bcryptjs'
 import jwt from 'jsonwebtoken';
 import { APP_SECRET } from "../utility";
+import { PubSubEngine } from "graphql-subscriptions";
 
 interface jwtPayLoad{
     userId : number
@@ -14,14 +15,16 @@ class mutationResolver{
     
     @Authorized()
     @Mutation(returns => Link)
-    postLink(@Arg("url") url : string, @Arg("description") description : string, @Ctx() ctx : Context){
-        return ctx.prisma.link.create({
+    async postLink(@Arg("url") url : string, @Arg("description") description : string, @Ctx() ctx : Context, @PubSub() pb : PubSubEngine){
+        let t = await ctx.prisma.link.create({
             data : {
                 description : description,
                 url : url,
                 postedById : ctx.userId
             }
         })
+        pb.publish('NEW_LINK', t)
+        return t;
     }
 
     @Authorized()
