@@ -1,6 +1,6 @@
 import { Arg, Authorized, Ctx, Mutation, PubSub, Resolver } from "type-graphql";
 import { Context } from "..";
-import { AuthPayLoad, Link, User } from "../grpahql-schema-classes";
+import { AuthPayLoad, Link, User, Vote } from "../grpahql-schema-classes";
 import bcrpypt from 'bcryptjs'
 import jwt from 'jsonwebtoken';
 import { APP_SECRET } from "../utility";
@@ -23,7 +23,7 @@ class mutationResolver{
                 postedById : ctx.userId
             }
         })
-        pb.publish('NEW_LINK', t)
+        await pb.publish('NEW_LINK', t)
         return t;
     }
 
@@ -138,6 +138,37 @@ class mutationResolver{
 
         }
     }
+
+    @Authorized()
+    @Mutation(returns => Vote)
+    async vote(@Arg('linkId') linkId : number, @Ctx() ctx : Context, @PubSub() pb : PubSubEngine){
+        let item = await ctx.prisma.vote.findUnique({
+            where : {
+                linkId_userId : {
+                    linkId : linkId,
+                    userId : ctx.userId!
+                }
+            }
+        })
+        if(item){
+            throw new Error("Already voted")
+        }
+        let vote = await ctx.prisma.vote.create({
+            data : {
+                user : {
+                    connect : {
+                        id : ctx.userId!
+                    }
+                },
+                link : {connect : {id : linkId}}
+            }
+        })
+        // console.log(vote)
+        await pb.publish('NEW_VOTE', vote)
+
+        return vote
+    }
+    
 
 
 }

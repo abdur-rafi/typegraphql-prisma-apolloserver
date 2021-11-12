@@ -14,11 +14,20 @@ function getTokenPayLoad(token : string){
     return t;
 }
 
-function getUserId(req : Request){
-    
-    const authHeader = req.headers.authorization;
-    if(authHeader){
-        const token = authHeader.replace('Bearer ', '');
+function getUserId(req : Request | null, token : string | null){
+    if(!req && !token){
+        throw new Error("Unauthorized")
+    }
+    let authString : string | null | undefined = ''
+    if(req){
+        authString = req.headers.authorization;
+    }
+    else{
+        authString = token
+    }
+        
+    if(authString){
+        const token = authString.replace('Bearer ', '');
         if(!token) return null;
         const t = getTokenPayLoad(token);
         if(!t){

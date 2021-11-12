@@ -14,6 +14,9 @@ class User{
     @Field(type => [Link])
     links : Link[] 
 
+    @Field(type => [Vote])
+    votes : Vote[]
+
     
 }
 
@@ -34,6 +37,11 @@ class Link{
 
     postedById : number;
 
+    
+    @Field(type => [Vote])
+    votes : Vote[]
+
+
 }
 
 @ObjectType()
@@ -45,4 +53,17 @@ class AuthPayLoad{
     user : User;
 }
 
-export {Link, User, AuthPayLoad}
+@ObjectType()
+class Vote{
+    @Field()
+    id : number;
+
+    @Field(type => User)
+    user : User;
+
+    @Field(type => Link)
+    link : Link;
+
+}
+
+export {Link, User, AuthPayLoad, Vote}

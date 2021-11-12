@@ -9,7 +9,7 @@ import { Link } from './grpahql-schema-classes';
 import { queryResolver } from './resolvers/query';
 import { mutationResolver } from './resolvers/mutation';
 import { getUserId } from './utility';
-import { LinkResolver, UserResolver } from './resolvers/fieldResolvers';
+import { LinkResolver, UserResolver, VoteResolver } from './resolvers/fieldResolvers';
 import { authChecker } from './authChecker';
 import express from 'express';
 // import http from 'http';
@@ -31,7 +31,7 @@ interface Context {
 }
 
 buildSchema({
-    resolvers : [queryResolver, mutationResolver, UserResolver, LinkResolver, subscriptionResolver],
+    resolvers : [queryResolver, mutationResolver, UserResolver, VoteResolver, LinkResolver, subscriptionResolver],
     authChecker : authChecker,
     pubSub : pubsub
     
@@ -41,9 +41,21 @@ buildSchema({
     const httpServer = createServer(app);
     const prisma = new PrismaClient();
 
-    const subscriptionServer = SubscriptionServer.create(
-        { schema, execute, subscribe },
-        { server: httpServer, path: '/' }
+    const subscriptionServer = new SubscriptionServer(
+        { 
+            schema,
+            execute,
+            subscribe,
+            onConnect : (a : any, b : any) : Context=>{
+                // console.log(a)
+                return {
+                    prisma : prisma,
+                    userId : a && a.Authorization ? getUserId(null,a.Authorization) : null
+                }
+            } 
+        },
+        { server: httpServer, path: '/' },
+        
       );
 
 
@@ -51,17 +63,17 @@ buildSchema({
         schema : schema,
         plugins: [ApolloServerPluginLandingPageGraphQLPlayground(), {
             async serverWillStart() {
-              return {
-                async drainServer() {
-                  subscriptionServer.close();
-                }
-              };
+                return {
+                    async drainServer() {
+                        subscriptionServer.close();
+                    }
+                };
             }
-          }],
+        }],
         context : ({req}) : Context =>{
             return({
                 prisma : prisma,
-                userId : req && req.headers.authorization ? getUserId(req) : null
+                userId : req && req.headers.authorization ? getUserId(req, null) : null
             })
         }
     })
