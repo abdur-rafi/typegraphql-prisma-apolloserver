@@ -1,0 +1,1 @@
+Following the tutorial of apollo-graphql from howtographql.com, but implemented with typegraphql, typescript and apollo server 3
